@@ -8,6 +8,16 @@ public class Cart {
     protected int userAge;
     public List<Product> cart;
     public int cartStorage;
+    public static final int MIN_PRODUCE_QTY_FOR_DISCOUNT = 3;
+    public static final double DISCOUNTED_PRODUCE_COST = 5;
+    public static final double PRODUCE_COST = 2;
+    public static final double ALCOHOL_COST = 8;
+    public static final double DAIRY_COST = 3;
+    public static final double MEAT_COST = 10;
+    public static final double FROZEN_COST = 5;
+    public static final double ALCOHOL_FROZEN_COMBO_COST = 10;
+    public static final String DEFAULT_STATE = "AZ";
+    public static final int MIN_ALCOHOL_AGE = 21;
 
     /**
      * Calculates the final cost after all savings and tax has been applied. Also checks
@@ -28,7 +38,53 @@ public class Cart {
      * @throws UnderAgeException
      */
     public double calcCost() throws UnderAgeException {
-        return 0; //implement me, will be important for assignment 4 (nothing to do here for assignment 3)
+    	int produceCounter = 0;
+    	int alcoholCounter = 0;
+    	int frozenCounter = 0;
+    	double cost = 0;
+    	for(int i = 0; i < cart.size(); i++) {
+    		if(cart.get(i) instanceof Produce) {
+    			produceCounter++;
+    		}
+    		else if(cart.get(i) instanceof Alcohol) {
+    			if(userAge < MIN_ALCOHOL_AGE) {
+    				throw new UnderAgeException("Buyer is under age");
+    			}
+    			alcoholCounter++;
+    		}
+    		else if(cart.get(i) instanceof FrozenFood) {
+    			frozenCounter++;
+    		}
+    		else if(cart.get(i) instanceof Dairy) {
+    			cost += DAIRY_COST;
+    		}
+    		else if(cart.get(i) instanceof Meat) {
+    			cost += MEAT_COST;
+    		}
+    			
+    	}
+    	while(produceCounter > 0) {
+    		if(produceCounter >= MIN_PRODUCE_QTY_FOR_DISCOUNT) {
+    			cost += DISCOUNTED_PRODUCE_COST;
+    			produceCounter -= MIN_PRODUCE_QTY_FOR_DISCOUNT;
+    		}
+    		else {
+    			cost += PRODUCE_COST * produceCounter;
+    			produceCounter = 0;
+    		}
+    	}
+    	
+    	while(alcoholCounter > 0 && frozenCounter > 0) {
+    		cost += ALCOHOL_FROZEN_COMBO_COST;
+    		alcoholCounter--;
+    		frozenCounter--;
+    	}
+    	cost += ALCOHOL_COST * alcoholCounter;
+    	cost += FROZEN_COST * frozenCounter;
+    	
+    	cost += getTax(cost, DEFAULT_STATE);
+    	
+    	return cost; //implement me, will be important for assignment 4 (nothing to do here for assignment 3)
     }
 
     // calculates how much was saved in the current shopping cart based on the deals, returns the saved amount
@@ -46,29 +102,29 @@ public class Cart {
         for(int i = 0; i < cart.size(); i++) {
             subTotal += cart.get(i).getCost();
             costAfterSavings =costAfterSavings+cart.get(i).getCost();
-
-            if (cart.get(i).getClass().toString() == Produce.class.toString()) {
+            /*SER316-start instanceof works better in determining type */
+            if (cart.get(i) instanceof Produce) { /*SER316-end*/
                 produce_counter++;
 
                 if (produce_counter >= 3) {
                     costAfterSavings -= 1;
                     produce_counter = 0;
                 }
-            }
-            else if (cart.get(i).getClass().toString()==Alcohol.class.toString()) {
+            } /*SER316-start instanceof works better in determining type */
+            else if (cart.get(i) instanceof Alcohol) { /*SER316-end*/
                 alcoholCounter++;
                 if (userAge < 21) {
                     throw new UnderAgeException("The User is not of age to purchase alcohol!");
                 }
-            }
-            else if (cart.get(i).getClass().toString() == FrozenFood.class.toString()) {
+            } /*SER316-start instanceof works better in determining type */
+            else if (cart.get(i) instanceof FrozenFood) { /*SER316-end*/
                 frozenFoodCounter++;
-            }
-            else if (cart.get(i).getClass().toString() == FrozenFood.class.toString())
+            } /*SER316-start instanceof works better in determining type */
+            else if (cart.get(i) instanceof Dairy /*SER316-end*/)	// this needs changing to add the Dairy class to the algorithm, otherwise FrozenFood is attempted to be tested twice
                 dairyCounter++;
 
             if (alcoholCounter >= 1 && frozenFoodCounter >= 1) {
-                 costAfterSavings = costAfterSavings + 3;
+                 costAfterSavings = costAfterSavings /*SER316-start*/ - /*SER316-end*/ 3;	// this should subtract from costAfterSavings to reflect the discount
                  alcoholCounter--;
                  frozenFoodCounter--;
             }
@@ -77,7 +133,12 @@ public class Cart {
         return subTotal - costAfterSavings;
     }
 
-    // Gets the tax based on state and the total
+    /**
+     *  Gets the tax based on state and the total. This only calculates the tax. Return value is meant to be added to total.
+     * @param totalBT Total cost before taxes.
+     * @param twoLetterUSStateAbbreviation State to calculate tax for.
+     * @return tax based on state and the total
+     */
     public double getTax(double totalBT, String twoLetterUSStateAbbreviation) {
         double newTotal = 0;
         switch (twoLetterUSStateAbbreviation) {
