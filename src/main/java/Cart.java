@@ -150,11 +150,16 @@ public class Cart {
                 break;
             case "NY":
                 newTotal = totalBT * .1;
+                /*SER316-start prevent from leaking to the next case*/
+                break;
+                /*SER316-end*/
             case "CO":
                 newTotal = totalBT * .07;
                 break;
             default:
-                return totalBT;
+                return /*SER316-start return 0 for unrecognized state*/
+                		0;
+                /*SER316-end*/
         }
         return newTotal;
     }
